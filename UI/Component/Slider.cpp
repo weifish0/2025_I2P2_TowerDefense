@@ -14,13 +14,26 @@ Slider::Slider(float x, float y, float w, float h)
     Anchor = Engine::Point(0.5, 0.5);
 }
 void Slider::Draw() const {
-    // TODO HACKATHON-5 (3/4): The slider's component should be drawn here.
+    // 畫白線
+    Bar.Draw();
+    End1.Draw();
+    End2.Draw();
+    // 畫滑塊頭
+    float knobX = Bar.Position.x + value * Bar.Size.x;
+    float knobY = Bar.Position.y + Bar.Size.y / 2;
+    Engine::Image knob("stage-select/slider.png", knobX, knobY, 24, 24, 0.5, 0.5);
+    knob.Draw();
 }
 void Slider::SetOnValueChangedCallback(std::function<void(float value)> onValueChangedCallback) {
     OnValueChangedCallback = onValueChangedCallback;
 }
 void Slider::SetValue(float value) {
-    // TODO HACKATHON-5 (4/4): Set the value of the slider and call the callback.
+    value = std::max(Min, std::min(Max, value));
+    if (this->value != value) {
+        this->value = value;
+        if (OnValueChangedCallback)
+            OnValueChangedCallback(value);
+    }
 }
 void Slider::OnMouseDown(int button, int mx, int my) {
     if ((button & 1) && mouseIn)

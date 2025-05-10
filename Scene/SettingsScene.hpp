@@ -8,6 +8,8 @@
 class SettingsScene final : public Engine::IScene {
 private:
     std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE> bgmInstance;
+    float bgmVolume;
+    float sfxVolume;
 
 public:
     explicit SettingsScene() = default;

@@ -145,7 +145,7 @@ void PlayScene::Update(float deltaTime) {
                 delete UIGroup;
                 delete imgTarget;*/
                 // Win.
-                Engine::GameEngine::GetInstance().ChangeScene("win-scene");
+                Engine::GameEngine::GetInstance().ChangeScene("win");
             }
             continue;
         }
@@ -277,6 +277,8 @@ void PlayScene::OnKeyDown(int keyCode) {
 }
 void PlayScene::Hit() {
     lives--;
+    if (UILives)
+        UILives->Text = std::string("Life ") + std::to_string(lives);
     if (lives <= 0) {
         Engine::GameEngine::GetInstance().ChangeScene("lose");
     }
