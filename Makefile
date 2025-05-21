@@ -1,5 +1,5 @@
-C := gcc-14
-CXX := g++-14
+C := gcc
+CXX := g++
 SOURCE_DIR := $(CURDIR)
 BUILD_DIR := $(CURDIR)/build
 PROJECT_NAME := 2025_I2P2_TowerDefense
@@ -30,7 +30,3 @@ build:
 run:
 	@echo "Running project..."
 	@${BUILD_DIR}/${PROJECT_NAME}
-
-# cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE -DCMAKE_MAKE_PROGRAM="%cd%/ninja" -S "%cd%/" -B "%cd%/build" -G "Unix Makefiles" &&
-# cmake --build "./build" --target all --config Debug -j 8 &&
-# start "./build/2025_I2P2_TowerDefense_with_answer"
