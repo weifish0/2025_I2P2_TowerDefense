@@ -31,6 +31,7 @@ protected:
     int lives;
     int money;
     int SpeedMult;
+    int score;
 
 public:
     static bool DebugMode;
@@ -54,6 +55,7 @@ public:
     Group *EffectGroup;
     Group *UIGroup;
     Engine::Label *UIMoney;
+    Engine::Label *UIScore;
     Engine::Label *UILives;
     Engine::Image *imgTarget;
     Engine::Sprite *dangerIndicator;
@@ -75,6 +77,7 @@ public:
     void Hit();
     int GetMoney() const;
     void EarnMoney(int money);
+    void EarnScore(int score);
     void ReadMap();
     void ReadEnemyWave();
     void ConstructUI();

@@ -13,7 +13,7 @@ public:
     explicit ScoreboardScene() = default;
     void Initialize() override;
     void Terminate() override;
-    void BackOnClick(int stage);
+    void BackOnClick();
 };
 
 #endif   // SCOREBOARDSCENE_HPP 

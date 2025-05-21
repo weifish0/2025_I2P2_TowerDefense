@@ -54,6 +54,7 @@ void PlayScene::Initialize() {
     deathCountDown = -1;
     lives = 10;
     money = 150;
+    score = 0;
     SpeedMult = 1;
     // Add groups from bottom to top.
     AddNewObject(TileMapGroup = new Group());
@@ -136,16 +137,15 @@ void PlayScene::Update(float deltaTime) {
         ticks += deltaTime;
         if (enemyWaveData.empty()) {
             if (EnemyGroup->GetObjects().empty()) {
-                // Free resources.
-                /*delete TileMapGroup;
-                delete GroundEffectGroup;
-                delete DebugIndicatorGroup;
-                delete TowerGroup;
-                delete EnemyGroup;
-                delete BulletGroup;
-                delete EffectGroup;
-                delete UIGroup;
-                delete imgTarget;*/
+                // 保存分數到檔案
+                std::ofstream fout("Resource/scoreboard.txt", std::ios::app);
+                if (fout.is_open()) {
+                    fout << "Win Player" << " " << score << "\n";
+                    fout.close();
+                    Engine::LOG(Engine::INFO) << "分數已成功寫入檔案";
+                } else {
+                    Engine::LOG(Engine::ERROR) << "無法開啟分數檔案進行寫入";
+                }
                 // Win.
                 Engine::GameEngine::GetInstance().ChangeScene("win");
             }
@@ -182,6 +182,7 @@ void PlayScene::Update(float deltaTime) {
         preview->Update(deltaTime);
     }
 }
+
 void PlayScene::Draw() const {
     IScene::Draw();
     if (DebugMode) {
@@ -290,9 +291,19 @@ void PlayScene::OnKeyDown(int keyCode) {
 }
 void PlayScene::Hit() {
     lives--;
+    score -= 1000;
     if (UILives)
         UILives->Text = std::string("Life ") + std::to_string(lives);
     if (lives <= 0) {
+        // 保存分數到檔案
+        std::ofstream fout("Resource/scoreboard.txt", std::ios::app);
+        if (fout.is_open()) {
+            fout << "Lose Player" << " " << score << "\n";
+            fout.close();
+            Engine::LOG(Engine::INFO) << "分數已成功寫入檔案";
+        } else {
+            Engine::LOG(Engine::ERROR) << "無法開啟分數檔案進行寫入";
+        }
         Engine::GameEngine::GetInstance().ChangeScene("lose");
     }
 }
@@ -302,6 +313,10 @@ int PlayScene::GetMoney() const {
 void PlayScene::EarnMoney(int money) {
     this->money += money;
     UIMoney->Text = std::string("$") + std::to_string(this->money);
+}
+void PlayScene::EarnScore(int score) {
+    this->score += score;
+    UIScore->Text = std::string("Score ") + std::to_string(this->score);
 }
 void PlayScene::ReadMap() {
     std::string filename = std::string("Resource/map") + std::to_string(MapId) + ".txt";
@@ -357,18 +372,19 @@ void PlayScene::ConstructUI() {
     UIGroup->AddNewObject(new Engine::Label(std::string("Stage ") + std::to_string(MapId), "pirulen.ttf", 32, 1294, 0));
     UIGroup->AddNewObject(UIMoney = new Engine::Label(std::string("$") + std::to_string(money), "pirulen.ttf", 24, 1294, 48));
     UIGroup->AddNewObject(UILives = new Engine::Label(std::string("Life ") + std::to_string(lives), "pirulen.ttf", 24, 1294, 88));
+    UIGroup->AddNewObject(UIScore = new Engine::Label(std::string("Score ") + std::to_string(score), "pirulen.ttf", 24, 1294, 128));
     TurretButton *btn;
     // Button 1
     btn = new TurretButton("play/floor.png", "play/dirt.png",
-                           Engine::Sprite("play/tower-base.png", 1294, 136, 0, 0, 0, 0),
-                           Engine::Sprite("play/turret-1.png", 1294, 136 - 8, 0, 0, 0, 0), 1294, 136, MachineGunTurret::Price);
+                           Engine::Sprite("play/tower-base.png", 1294, 188, 0, 0, 0, 0),
+                           Engine::Sprite("play/turret-1.png", 1294, 188 - 8, 0, 0, 0, 0), 1294, 188, MachineGunTurret::Price);
     // Reference: Class Member Function Pointer and std::bind.
     btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 0));
     UIGroup->AddNewControlObject(btn);
     // Button 2
     btn = new TurretButton("play/floor.png", "play/dirt.png",
-                           Engine::Sprite("play/tower-base.png", 1370, 136, 0, 0, 0, 0),
-                           Engine::Sprite("play/turret-2.png", 1370, 136 - 8, 0, 0, 0, 0), 1370, 136, LaserTurret::Price);
+                           Engine::Sprite("play/tower-base.png", 1370, 188, 0, 0, 0, 0),
+                           Engine::Sprite("play/turret-2.png", 1370, 188 - 8, 0, 0, 0, 0), 1370, 188, LaserTurret::Price);
     btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 1));
     UIGroup->AddNewControlObject(btn);
 
