@@ -33,9 +33,14 @@ void ScoreboardScene::Initialize() {
     std::ifstream fin("Resource/scoreboard.txt");
     std::string username;
     int score;
+    std::string datetime;
 
     while (fin >> username >> score) {
-        scores.push_back({username, score});
+        // 讀取剩餘的行作為時間資訊
+        std::getline(fin, datetime);
+        // 移除開頭的空白
+        datetime = datetime.substr(1);
+        scores.push_back({username, score, datetime});
     }
     fin.close();
 
@@ -50,13 +55,6 @@ void ScoreboardScene::Initialize() {
     // 顯示前10個最高分
     int y = halfH / 3 + 100;
     RenderScoreboard(scores, 0);
-    // for (size_t i = 0; i < std::min(scores.size(), size_t(10)); i++) {
-    //     std::string text = scores[i].username + ": " + std::to_string(scores[i].score);
-    //     Engine::Label *new_score_obj_id = new Engine::Label(text, "pirulen.ttf", 32, halfW, y, 255, 255, 255, 255, 0.5, 0.5);
-    //     AddNewObject(new_score_obj_id);
-    //     scores[i].score_obj_id = new_score_obj_id;
-    //     y += 50;
-    // }
 
     // 添加返回按鈕
     Engine::ImageButton *back_btn;
@@ -91,6 +89,7 @@ void ScoreboardScene::Initialize() {
 }
 
 void ScoreboardScene::Terminate() {
+    std::cout << "ScoreboardScene Terminated" << std::endl;
     AudioHelper::StopSample(bgmInstance);
     bgmInstance = std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE>();
     
@@ -99,6 +98,8 @@ void ScoreboardScene::Terminate() {
         RemoveObject(label->GetObjectIterator());
     }
     scoreLabels.clear();
+    
+    scores.clear();
     
     // 清理頁碼標籤
     if (pageLabel) {
@@ -111,7 +112,7 @@ void ScoreboardScene::Terminate() {
 void ScoreboardScene::RenderScoreboard(const std::vector<ScoreEntry>& scores, int direction) {
     if (direction == -1 && rendering_page > 0) {
         rendering_page--;
-    } else if (direction == 1 && rendering_page < scores.size() / 10) {
+    } else if (direction == 1 && rendering_page < scores.size() / 11) {
         rendering_page++;
     }
 
@@ -128,7 +129,8 @@ void ScoreboardScene::RenderScoreboard(const std::vector<ScoreEntry>& scores, in
 
     int y = halfH / 3 + 100;
     for (size_t i = rendering_page * 10; i < std::min(scores.size(), size_t(rendering_page * 10 + 10)); i++) {
-        std::string text = scores[i].username + ": " + std::to_string(scores[i].score);
+        // 格式化顯示文字，加入時間資訊
+        std::string text = scores[i].username + ": " + std::to_string(scores[i].score) + " (" + scores[i].datetime + ")";
         Engine::Label *new_score_obj_id = new Engine::Label(text, "pirulen.ttf", 32, halfW, y, 255, 255, 255, 255, 0.5, 0.5);
         scoreLabels.push_back(new_score_obj_id);
         AddNewObject(new_score_obj_id);

@@ -32,6 +32,7 @@ protected:
     int money;
     int SpeedMult;
     int score;
+    bool is_score_saved;
 
 public:
     static bool DebugMode;
@@ -66,6 +67,7 @@ public:
     std::list<int> keyStrokes;
     static Engine::Point GetClientSize();
     explicit PlayScene() = default;
+    void SaveScore();
     void Initialize() override;
     void Terminate() override;
     void Update(float deltaTime) override;

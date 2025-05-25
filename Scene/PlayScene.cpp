@@ -56,6 +56,7 @@ void PlayScene::Initialize() {
     money = 150;
     score = 0;
     SpeedMult = 1;
+    is_score_saved = false;
     // Add groups from bottom to top.
     AddNewObject(TileMapGroup = new Group());
     AddNewObject(GroundEffectGroup = new Group());
@@ -86,6 +87,34 @@ void PlayScene::Terminate() {
     deathBGMInstance = std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE>();
     IScene::Terminate();
 }
+
+void PlayScene::SaveScore() {
+    if (is_score_saved) {
+        return;
+    }
+    
+    // 獲取當前時間
+    auto now = std::chrono::system_clock::now();
+    auto time_t_now = std::chrono::system_clock::to_time_t(now);
+    
+    // 格式化時間
+    char buffer[32];
+    std::tm* timeinfo = std::localtime(&time_t_now);
+    std::strftime(buffer, sizeof(buffer), "%Y.%m.%d %H:%M:%S", timeinfo);
+    std::string datetime = buffer;
+    
+    // 保存分數到檔案
+    std::ofstream fout("./Resource/scoreboard.txt", std::ios::app);
+    if (fout.is_open()) {
+        fout << "TestPlayer" << " " << score << " " << datetime << "\n";
+        fout.close();
+        Engine::LOG(Engine::INFO) << "分數已成功寫入檔案";
+    } else {
+        Engine::LOG(Engine::ERROR) << "無法開啟分數檔案進行寫入";
+    }
+    is_score_saved = true;
+}
+
 void PlayScene::Update(float deltaTime) {
     // If we use deltaTime directly, then we might have Bullet-through-paper problem.
     // Reference: Bullet-Through-Paper
@@ -137,15 +166,7 @@ void PlayScene::Update(float deltaTime) {
         ticks += deltaTime;
         if (enemyWaveData.empty()) {
             if (EnemyGroup->GetObjects().empty()) {
-                // 保存分數到檔案
-                std::ofstream fout("Resource/scoreboard.txt", std::ios::app);
-                if (fout.is_open()) {
-                    fout << "Win Player" << " " << score << "\n";
-                    fout.close();
-                    Engine::LOG(Engine::INFO) << "分數已成功寫入檔案";
-                } else {
-                    Engine::LOG(Engine::ERROR) << "無法開啟分數檔案進行寫入";
-                }
+                SaveScore();
                 // Win.
                 Engine::GameEngine::GetInstance().ChangeScene("win");
             }
@@ -295,15 +316,7 @@ void PlayScene::Hit() {
     if (UILives)
         UILives->Text = std::string("Life ") + std::to_string(lives);
     if (lives <= 0) {
-        // 保存分數到檔案
-        std::ofstream fout("Resource/scoreboard.txt", std::ios::app);
-        if (fout.is_open()) {
-            fout << "Lose Player" << " " << score << "\n";
-            fout.close();
-            Engine::LOG(Engine::INFO) << "分數已成功寫入檔案";
-        } else {
-            Engine::LOG(Engine::ERROR) << "無法開啟分數檔案進行寫入";
-        }
+        SaveScore();
         Engine::GameEngine::GetInstance().ChangeScene("lose");
     }
 }

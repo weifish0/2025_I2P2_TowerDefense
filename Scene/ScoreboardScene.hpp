@@ -14,6 +14,7 @@ public:
     struct ScoreEntry {
         std::string username;
         int score;
+        std::string datetime;
     };
     int w;
     int h;
