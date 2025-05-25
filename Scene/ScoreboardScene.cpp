@@ -127,11 +127,11 @@ void ScoreboardScene::RenderScoreboard(const std::vector<ScoreEntry>& scores, in
     }
     scoreLabels.clear();  // 清空追蹤列表
 
-    int y = halfH / 3 + 100;
+    int y = halfH / 3 + 40;
     for (size_t i = rendering_page * 10; i < std::min(scores.size(), size_t(rendering_page * 10 + 10)); i++) {
         // 格式化顯示文字，加入時間資訊
-        std::string text = scores[i].username + ": " + std::to_string(scores[i].score) + " (" + scores[i].datetime + ")";
-        Engine::Label *new_score_obj_id = new Engine::Label(text, "pirulen.ttf", 32, halfW, y, 255, 255, 255, 255, 0.5, 0.5);
+        std::string text = std::to_string(i) + ". " + scores[i].username + ": " + std::to_string(scores[i].score) + " (" + scores[i].datetime + ")";
+        Engine::Label *new_score_obj_id = new Engine::Label(text, "pirulen.ttf", 32, 100, y, 255, 255, 255, 255, 0, 0);
         scoreLabels.push_back(new_score_obj_id);
         AddNewObject(new_score_obj_id);
         y += 50;

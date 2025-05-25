@@ -312,11 +312,10 @@ void PlayScene::OnKeyDown(int keyCode) {
 }
 void PlayScene::Hit() {
     lives--;
-    score -= 1000;
+    score -= 500;
     if (UILives)
         UILives->Text = std::string("Life ") + std::to_string(lives);
     if (lives <= 0) {
-        SaveScore();
         Engine::GameEngine::GetInstance().ChangeScene("lose");
     }
 }
