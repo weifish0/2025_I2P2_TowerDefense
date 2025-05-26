@@ -24,6 +24,9 @@
 #include "Turret/MissileTurret.hpp"
 #include "Turret/MachineGunTurret.hpp"
 #include "Turret/TurretButton.hpp"
+#include "Tool/ToolButton.hpp"
+#include "Tool/Tool.hpp"
+#include "Tool/ShovelTool.hpp"
 #include "UI/Animation/DirtyEffect.hpp"
 #include "UI/Animation/Plane.hpp"
 #include "UI/Component/Label.hpp"
@@ -226,10 +229,16 @@ void PlayScene::Draw() const {
     }
 }
 void PlayScene::OnMouseDown(int button, int mx, int my) {
-    if ((button & 1) && !imgTarget->Visible && preview) {
-        // Cancel turret construct.
-        UIGroup->RemoveObject(preview->GetObjectIterator());
-        preview = nullptr;
+    if ((button & 1) && !imgTarget->Visible) {
+        // 取消砲塔或工具的放置
+        if (preview) {
+            UIGroup->RemoveObject(preview->GetObjectIterator());
+            preview = nullptr;
+        }
+        if (toolPreview) {
+            UIGroup->RemoveObject(toolPreview->GetObjectIterator());
+            toolPreview = nullptr;
+        }
     }
     IScene::OnMouseDown(button, mx, my);
 }
@@ -237,7 +246,7 @@ void PlayScene::OnMouseMove(int mx, int my) {
     IScene::OnMouseMove(mx, my);
     const int x = mx / BlockSize;
     const int y = my / BlockSize;
-    if (!preview || x < 0 || x >= MapWidth || y < 0 || y >= MapHeight) {
+    if ((!preview && !toolPreview) || x < 0 || x >= MapWidth || y < 0 || y >= MapHeight) {
         imgTarget->Visible = false;
         return;
     }
@@ -252,35 +261,48 @@ void PlayScene::OnMouseUp(int button, int mx, int my) {
     const int x = mx / BlockSize;
     const int y = my / BlockSize;
     if (button & 1) {
-        if (mapState[y][x] != TILE_OCCUPIED) {
-            if (!preview)
-                return;
-            // Check if valid.
-            if (!CheckSpaceValid(x, y)) {
-                Engine::Sprite *sprite;
-                GroundEffectGroup->AddNewObject(sprite = new DirtyEffect("play/target-invalid.png", 1, x * BlockSize + BlockSize / 2, y * BlockSize + BlockSize / 2));
-                sprite->Rotation = 0;
-                return;
-            }
-            // Purchase.
-            EarnMoney(-preview->GetPrice());
-            // Remove Preview.
-            preview->GetObjectIterator()->first = false;
-            UIGroup->RemoveObject(preview->GetObjectIterator());
-            // Construct real turret.
-            preview->Position.x = x * BlockSize + BlockSize / 2;
-            preview->Position.y = y * BlockSize + BlockSize / 2;
-            preview->Enabled = true;
-            preview->Preview = false;
-            preview->Tint = al_map_rgba(255, 255, 255, 255);
-            TowerGroup->AddNewObject(preview);
-            // To keep responding when paused.
-            preview->Update(0);
-            // Remove Preview.
-            preview = nullptr;
+        if (preview) {  // 處理砲塔放置
+            std::cout << "Trying to place turret at: " << x << ", " << y << std::endl;
+            std::cout << "Current map state: " << (mapState[y][x] == TILE_OCCUPIED ? "OCCUPIED" : "NOT OCCUPIED") << std::endl;
+            
+            if (mapState[y][x] != TILE_OCCUPIED) {
+                if (!CheckSpaceValid(x, y)) {
+                    Engine::Sprite *sprite;
+                    GroundEffectGroup->AddNewObject(sprite = new DirtyEffect("play/target-invalid.png", 1, x * BlockSize + BlockSize / 2, y * BlockSize + BlockSize / 2));
+                    sprite->Rotation = 0;
+                    return;
+                }
+                // Purchase.
+                EarnMoney(-preview->GetPrice());
+                // Remove Preview.
+                preview->GetObjectIterator()->first = false;
+                UIGroup->RemoveObject(preview->GetObjectIterator());
+                // Construct real turret.
+                preview->Position.x = x * BlockSize + BlockSize / 2;
+                preview->Position.y = y * BlockSize + BlockSize / 2;
+                preview->Enabled = true;
+                preview->Preview = false;
+                preview->Tint = al_map_rgba(255, 255, 255, 255);
+                TowerGroup->AddNewObject(preview);
+                // To keep responding when paused.
+                preview->Update(0);
+                // Remove Preview.
+                preview = nullptr;
 
-            mapState[y][x] = TILE_OCCUPIED;
-            OnMouseMove(mx, my);
+                mapState[y][x] = TILE_OCCUPIED;
+                OnMouseMove(mx, my);
+            }
+        } else if (toolPreview) {  // 處理工具使用
+            std::cout << "Using shovel at: " << x << ", " << y << std::endl;
+            std::cout << "Current map state: " << (mapState[y][x] == TILE_OCCUPIED ? "OCCUPIED" : "NOT OCCUPIED") << std::endl;
+            
+            // 使用工具
+            toolPreview->Position.x = x * BlockSize + BlockSize / 2;
+            toolPreview->Position.y = y * BlockSize + BlockSize / 2;
+            toolPreview->UseTool();
+            // 移除工具預覽
+            UIGroup->RemoveObject(toolPreview->GetObjectIterator());
+            toolPreview = nullptr;
         }
     }
 }
@@ -410,6 +432,12 @@ void PlayScene::ConstructUI() {
                            Engine::Sprite("play/turret-3.png", 1446, 188 - 8, 0, 0, 0, 0), 1446, 188, MissileTurret::Price);
     btn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 2));
     UIGroup->AddNewControlObject(btn);
+    // Button 4 - Shovel Tool
+    ToolButton *toolBtn = new ToolButton("play/floor.png", "play/dirt.png",
+                           Engine::Sprite("play/tower-base.png", 1522, 188, 0, 0, 0, 0),
+                           Engine::Sprite("play/shovel.png", 1522, 188 - 8, 0, 0, 0, 0), 1522, 188, 0);
+    toolBtn->SetOnClickCallback(std::bind(&PlayScene::UIBtnClicked, this, 3));
+    UIGroup->AddNewControlObject(toolBtn);
 
     int w = Engine::GameEngine::GetInstance().GetScreenSize().x;
     int h = Engine::GameEngine::GetInstance().GetScreenSize().y;
@@ -420,24 +448,55 @@ void PlayScene::ConstructUI() {
 }
 
 void PlayScene::UIBtnClicked(int id) {
-    Turret *next_preview = nullptr;
-    if (id == 0 && money >= MachineGunTurret::Price)
-        next_preview = new MachineGunTurret(0, 0);
-    else if (id == 1 && money >= LaserTurret::Price)
-        next_preview = new LaserTurret(0, 0);
-    else if (id == 2 && money >= MissileTurret::Price)
-        next_preview = new MissileTurret(0, 0);
-    if (!next_preview)
-        return;   // not enough money or invalid turret.
+    if (id < 3) {  // 處理砲塔按鈕
+        std::cout << "UIBtnClicked: " << id << std::endl;
+        // 清除工具預覽
+        if (toolPreview) {
+            UIGroup->RemoveObject(toolPreview->GetObjectIterator());
+            toolPreview = nullptr;
+        }
 
-    if (preview)
-        UIGroup->RemoveObject(preview->GetObjectIterator());
-    preview = next_preview;
-    preview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
-    preview->Tint = al_map_rgba(255, 255, 255, 200);
-    preview->Enabled = false;
-    preview->Preview = true;
-    UIGroup->AddNewObject(preview);
+        Turret *next_preview = nullptr;
+        if (id == 0 && money >= MachineGunTurret::Price)
+            next_preview = new MachineGunTurret(0, 0);
+        else if (id == 1 && money >= LaserTurret::Price)
+            next_preview = new LaserTurret(0, 0);
+        else if (id == 2 && money >= MissileTurret::Price)
+            next_preview = new MissileTurret(0, 0);
+        
+        if (!next_preview)
+            return;   // not enough money or invalid turret.
+
+        if (preview)
+            UIGroup->RemoveObject(preview->GetObjectIterator());
+        preview = next_preview;
+        preview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
+        preview->Tint = al_map_rgba(255, 255, 255, 200);
+        preview->Enabled = false;
+        preview->Preview = true;
+        UIGroup->AddNewObject(preview);
+    } else if (id == 3) {  // 處理鏟子工具按鈕
+        // 清除砲塔預覽
+        if (preview) {
+            UIGroup->RemoveObject(preview->GetObjectIterator());
+            preview = nullptr;
+        }
+
+        Tool *next_tool_preview = nullptr;
+        next_tool_preview = new ShovelTool(0, 0);
+        
+        if (!next_tool_preview)
+            return;
+
+        if (toolPreview)
+            UIGroup->RemoveObject(toolPreview->GetObjectIterator());
+        toolPreview = next_tool_preview;
+        toolPreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
+        toolPreview->Tint = al_map_rgba(255, 255, 255, 200);
+        toolPreview->Enabled = false;
+        toolPreview->Preview = true;
+        UIGroup->AddNewObject(toolPreview);
+    }
     OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
 }
 
