@@ -16,6 +16,7 @@ namespace Engine {
     class Image;
     class Label;
     class Sprite;
+    class ImageButton;
 }   // namespace Engine
 
 class PlayScene final : public Engine::IScene {
@@ -27,6 +28,8 @@ private:
     };
     ALLEGRO_SAMPLE_ID bgmId;
     std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE> deathBGMInstance;
+    Engine::ImageButton *retreatButton;
+    bool retreatButtonVisible;
 
 protected:
     int lives;
@@ -89,6 +92,6 @@ public:
     bool CheckSpaceValid(int x, int y);
     int GetScore() const { return score; } 
     std::vector<std::vector<int>> CalculateBFSDistance();
-    // void ModifyReadMapTiles();
+    void OnRetreatButtonClicked();
 };
 #endif   // PLAYSCENE_HPP

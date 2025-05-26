@@ -31,11 +31,6 @@
 #include "UI/Animation/Plane.hpp"
 #include "UI/Component/Label.hpp"
 
-// TODO HACKATHON-4 (1/3): Trace how the game handles keyboard input.
-// TODO HACKATHON-4 (2/3): Find the cheat code sequence in this file.
-// TODO HACKATHON-4 (3/3): When the cheat code is entered, a plane should be spawned and added to the scene.
-// TODO HACKATHON-5 (1/4): There's a bug in this file, which crashes the game when you win. Try to find it.
-// TODO HACKATHON-5 (2/4): The "LIFE" label are not updated when you lose a life. Try to fix it.
 
 bool PlayScene::DebugMode = false;
 const std::vector<Engine::Point> PlayScene::directions = { Engine::Point(-1, 0), Engine::Point(0, -1), Engine::Point(1, 0), Engine::Point(0, 1) };
@@ -62,6 +57,7 @@ void PlayScene::Initialize() {
     score = 0;
     SpeedMult = 1;
     is_score_saved = false;
+    retreatButtonVisible = false;
     // Add groups from bottom to top.
     AddNewObject(TileMapGroup = new Group());
     AddNewObject(GroundEffectGroup = new Group());
@@ -111,7 +107,7 @@ void PlayScene::SaveScore() {
     // 保存分數到檔案
     std::ofstream fout("./Resource/scoreboard.txt", std::ios::app);
     if (fout.is_open()) {
-        fout << "TestPlayer" << " " << score << " " << datetime << "\n";
+        fout << "Unknown" << " " << score << " " << datetime << "\n";
         fout.close();
         Engine::LOG(Engine::INFO) << "分數已成功寫入檔案";
     } else {
@@ -188,7 +184,6 @@ void PlayScene::Update(float deltaTime) {
             case 1:
                 EnemyGroup->AddNewObject(enemy = new SoldierEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
                 break;
-            // TODO HACKATHON-3 (2/3): Add your new enemy here.
             case 2:
                 EnemyGroup->AddNewObject(enemy = new PlaneEnemy(SpawnCoordinate.x, SpawnCoordinate.y));
                 break;
@@ -335,7 +330,6 @@ void PlayScene::OnKeyDown(int keyCode) {
         // Hotkey for Speed up.
         SpeedMult = keyCode - ALLEGRO_KEY_0;
     }
-    // HACKATHON-4 (3/3): Cheat code
     if (keyStrokes.size() == code.size() && std::equal(keyStrokes.begin(), keyStrokes.end(), code.begin())) {
         std::cout << "CHEAT CODE ACTIVATED!" << std::endl;
         EffectGroup->AddNewObject(new Plane());
@@ -361,6 +355,23 @@ void PlayScene::EarnMoney(int money) {
 void PlayScene::EarnScore(int score) {
     this->score += score;
     UIScore->Text = std::string("Score ") + std::to_string(this->score);
+    
+    // 檢查分數是否達到 1000
+    if (this->score >= 1000 && !retreatButtonVisible) {
+        retreatButtonVisible = true;
+        if (retreatButton) {
+            retreatButton->Visible = true;
+            // 找到並顯示標籤
+            for (auto &it : UIGroup->GetObjects()) {
+                if (auto label = dynamic_cast<Engine::Label *>(it)) {
+                    if (label->Text == "Retreat") {
+                        label->Visible = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 void PlayScene::ReadMap() {
     std::string filename = std::string("Resource/map") + std::to_string(MapId) + ".txt";
@@ -450,6 +461,20 @@ void PlayScene::ConstructUI() {
     dangerIndicator = new Engine::Sprite("play/benjamin.png", w - shift, h - shift);
     dangerIndicator->Tint.a = 0;
     UIGroup->AddNewObject(dangerIndicator);
+
+    // Retreat Button 右下角
+    int retreatBtnX = w - 300;
+    int retreatBtnY = h - 200;
+    retreatButton = new Engine::ImageButton("play/floor.png", "play/dirt.png", retreatBtnX, retreatBtnY);
+    retreatButton->SetOnClickCallback(std::bind(&PlayScene::OnRetreatButtonClicked, this));
+    retreatButton->Visible = false;
+    UIGroup->AddNewControlObject(retreatButton);
+    
+    // Retreat Button Label 右下角
+    Engine::Label *retreatLabel = new Engine::Label("Retreat", "pirulen.ttf", 24, retreatBtnX + 60, retreatBtnY + 20);
+    retreatLabel->Anchor = Engine::Point(0.5, 0.5);
+    retreatLabel->Visible = false;
+    UIGroup->AddNewObject(retreatLabel);
 }
 
 void PlayScene::UIBtnClicked(int id) {
@@ -505,6 +530,11 @@ void PlayScene::UIBtnClicked(int id) {
     OnMouseMove(Engine::GameEngine::GetInstance().GetMousePosition().x, Engine::GameEngine::GetInstance().GetMousePosition().y);
 }
 
+void PlayScene::OnRetreatButtonClicked() {
+    SaveScore();
+    Engine::GameEngine::GetInstance().ChangeScene("retreat");
+}
+
 bool PlayScene::CheckSpaceValid(int x, int y) {
     if (x < 0 || x >= MapWidth || y < 0 || y >= MapHeight)
         return false;
@@ -545,7 +575,7 @@ std::vector<std::vector<int>> PlayScene::CalculateBFSDistance() {
     while (!que.empty()) {
         Engine::Point p = que.front();
         que.pop();
-        // TODO PROJECT-1 (1/1): Implement a BFS starting from the most right-bottom block in the map.
+        // PROJECT-1 (1/1): Implement a BFS starting from the most right-bottom block in the map.
         //               For each step you should assign the corresponding distance to the most right-bottom block.
         //               mapState[y][x] is TILE_DIRT if it is empty.
         // 檢查四個方向
