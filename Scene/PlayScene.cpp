@@ -80,7 +80,7 @@ void PlayScene::Initialize() {
     deathBGMInstance = Engine::Resources::GetInstance().GetSampleInstance("astronomia.ogg");
     Engine::Resources::GetInstance().GetBitmap("lose/benjamin-happy.png");
     // Start BGM.
-    bgmId = AudioHelper::PlayBGM("play.ogg");
+    bgmId = AudioHelper::PlayBGM(AudioHelper::CurrentBGMFile);
 }
 void PlayScene::Terminate() {
     AudioHelper::StopBGM(bgmId);

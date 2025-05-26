@@ -85,7 +85,7 @@ void ScoreboardScene::Initialize() {
     AddNewObject(new Engine::Label("NEXT", "pirulen.ttf", btn_font_size, 1450, halfH * btn_y_offset - 15, 0, 0, 0, 255, 0.5, 0.5));
 
     // 播放背景音樂
-    bgmInstance = AudioHelper::PlaySample("select.ogg", true, AudioHelper::BGMVolume);
+    bgmInstance = AudioHelper::PlaySample(AudioHelper::CurrentBGMFile, true, AudioHelper::BGMVolume);
 }
 
 void ScoreboardScene::Terminate() {

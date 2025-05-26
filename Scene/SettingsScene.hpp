@@ -7,6 +7,10 @@
 #include "Engine/IScene.hpp"
 #include <allegro5/allegro_audio.h>
 
+namespace Engine {
+    class Label;
+}
+
 class SettingsScene final : public Engine::IScene {
 private:
     std::shared_ptr<ALLEGRO_SAMPLE_INSTANCE> bgmInstance;
@@ -14,6 +18,7 @@ private:
     float sfxVolume;
     std::vector<std::string> bgmList;
     int currentBGMIndex;
+    Engine::Label* currentBGMLabel;
 
 public:
     explicit SettingsScene() = default;

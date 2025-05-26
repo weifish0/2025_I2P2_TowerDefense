@@ -41,7 +41,7 @@ void StageSelectScene::Initialize() {
     AddNewControlObject(btn);
     AddNewObject(new Engine::Label("BACK", "pirulen.ttf", 48, halfW, halfH * 3 / 2, 0, 0, 0, 255, 0.5, 0.5));
 
-    bgmInstance = AudioHelper::PlaySample("select.ogg", true, AudioHelper::BGMVolume);
+    bgmInstance = AudioHelper::PlaySample(AudioHelper::CurrentBGMFile, true, AudioHelper::BGMVolume);
 }
 void StageSelectScene::Terminate() {
     AudioHelper::StopSample(bgmInstance);
