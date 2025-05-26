@@ -210,6 +210,11 @@ void PlayScene::Update(float deltaTime) {
         // To keep responding when paused.
         preview->Update(deltaTime);
     }
+    if (toolPreview) {
+        toolPreview->Position = Engine::GameEngine::GetInstance().GetMousePosition();
+        // To keep responding when paused.
+        toolPreview->Update(deltaTime);
+    }
 }
 
 void PlayScene::Draw() const {
